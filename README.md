@@ -4,6 +4,7 @@ This guide uses Crossplane do instantiate an RDS MySQL database and deploy and c
 
 ### Next Steps and Alibis
 
+* Publish XRDs and compositions in OCI-compliant containers instead of applying composite resource definitions and compositions directly
 * Follow a GitOps workflow to deploy RDS MySQL database and WordPress
 * Update RDS Instance secret creation to use [Vault](https://crossplane.io/docs/v1.9/guides/vault-as-secret-store.html) or an alternative
 * Create a Zarf package to automate WordPress application delivery with an RDS MySQL database
