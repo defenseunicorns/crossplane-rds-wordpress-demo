@@ -1,0 +1,139 @@
+# nonk8s
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xeksmanagednodegroups.aws.infra.bigbang.dev
+  labels:
+    provider: aws
+spec:
+  compositeTypeRef:
+    apiVersion: infra.bigbang.dev/v1alpha1
+    kind: XEKSManagedNodeGroup
+
+  patchSets:
+    - name: common-parameters
+      patches:
+        - fromFieldPath: "spec.parameters.region"
+          toFieldPath: "spec.forProvider.region"
+
+  resources:
+    - name: eks-managed-nodegroup-iam-role
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: Role
+        metadata:
+          labels:
+            internalName: eks-managed-nodegroup-iam-role
+        spec:
+          forProvider:
+            assumeRolePolicyDocument: |
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "ec2.amazonaws.com"
+                      ]
+                    },
+                    "Action": "sts:AssumeRole"
+                  }
+                ]
+              }
+            description: "EKS Managed Node Group IAM Role"
+            tags:
+              - key: Name
+        patches:
+          - fromFieldPath: metadata.name
+            toFieldPath: spec.forProvider.tags[0].value
+            transforms:
+              - type: string
+                string:
+                  fmt: "%s-eks-managed-nodegroup"
+    - name: rolepolicyattachment-worker-node-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        metadata:
+          labels:
+            internalName: rolepolicyattachment-worker-node-policy
+        spec:
+          forProvider:
+            policyArn: arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                internalName: eks-managed-nodegroup-iam-role
+    - name: rolepolicyattachment-container-registry-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        metadata:
+          labels:
+            internalName: rolepolicyattachment-container-registry-policy
+        spec:
+          forProvider:
+            policyArn: arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                internalName: eks-managed-nodegroup-iam-role
+    - name: rolepolicyattachment-ssm-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        metadata:
+          labels:
+            internalName: rolepolicyattachment-ssm-policy
+        spec:
+          forProvider:
+            policyArn: arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                internalName: eks-managed-nodegroup-iam-role
+    - name: rolepolicyattachment-cni-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        metadata:
+          labels:
+            internalName: rolepolicyattachment-cni-policy
+        spec:
+          forProvider:
+            policyArn: arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                internalName: eks-managed-nodegroup-iam-role
+    - name: eks-managed-nodegroup
+      base:
+        apiVersion: eks.aws.crossplane.io/v1alpha1
+        kind: NodeGroup
+        metadata:
+          labels:
+            internalName: eks-managed-nodegroup
+        spec:
+          forProvider:
+            nodeRoleSelector:
+              matchControllerRef: true
+              matchLabels:
+                internalName: eks-managed-nodegroup-iam-role
+      patches:
+        - type: PatchSet
+          patchSetName: common-parameters
+        - fromFieldPath: spec.parameters.clusterNameMatchLabels
+          toFieldPath: spec.forProvider.clusterNameSelector.matchLabels
+        - fromFieldPath: spec.parameters.diskSize
+          toFieldPath: spec.forProvider.diskSize
+        - fromFieldPath: spec.parameters.instanceTypes
+          toFieldPath: spec.forProvider.instanceTypes
+        - fromFieldPath: spec.parameters.desiredNodeCount
+          toFieldPath: spec.forProvider.scalingConfig.desiredSize
+        - fromFieldPath: spec.parameters.minNodeCount
+          toFieldPath: spec.forProvider.scalingConfig.minSize
+        - fromFieldPath: spec.parameters.maxNodeCount
+          toFieldPath: spec.forProvider.scalingConfig.maxSize
+        - fromFieldPath: spec.parameters.subnetMatchLabels
+          toFieldPath: spec.forProvider.subnetSelector.matchLabels

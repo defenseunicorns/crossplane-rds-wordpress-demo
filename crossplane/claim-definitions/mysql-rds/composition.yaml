@@ -1,0 +1,87 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: compositemysqlchildinstances.aws.bigbang.dev
+  labels:
+    provider: aws
+spec:
+  writeConnectionSecretsToNamespace: crossplane-system
+  compositeTypeRef:
+    apiVersion: databases.bigbang.dev/v1alpha1
+    kind: CompositeMySQLChildInstance
+  resources:
+    - name: rdsinstance-security-group
+      base:
+        apiVersion: ec2.aws.crossplane.io/v1beta1
+        kind: SecurityGroup
+        metadata:
+          namespace: crossplane-system
+          labels:
+            internalName: dbsecuritygroup
+        spec:
+          forProvider:
+            description: Security group for database
+            ingress:
+              - fromPort: 3306
+                toPort: 3306
+                ipProtocol: tcp
+                ipRanges:
+                  - cidrIp: 0.0.0.0/0
+      patches:
+        - fromFieldPath: "spec.parameters.vpcId"
+          toFieldPath: "spec.forProvider.vpcId"
+        - fromFieldPath: "spec.parameters.region"
+          toFieldPath: "spec.forProvider.region"
+        - fromFieldPath: "spec.parameters.sgName"
+          toFieldPath: "metadata.name"
+        - fromFieldPath: "metadata.uid"
+          toFieldPath: "spec.forProvider.groupName"
+          transforms:
+            - type: string
+              string:
+                fmt: "database-security-group-%s"          
+    - name: rdsinstance
+      base:
+        apiVersion: database.aws.crossplane.io/v1beta1
+        kind: RDSInstance
+        spec:  
+          forProvider:
+            autoMinorVersionUpgrade: true
+            engine: mysql
+            engineVersion: "5.7"
+            masterUsername: mysqladmin
+            multiAZ: false
+            port: 3306
+            storageType: gp2
+            skipFinalSnapshotBeforeDeletion: true
+            vpcSecurityGroupIDSelector:
+              matchControllerRef: true
+          writeConnectionSecretToRef:
+            namespace: crossplane-system
+            name: default
+      patches:
+        - fromFieldPath: "metadata.uid"
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-mysql"
+        - fromFieldPath: "spec.parameters.storageGB"
+          toFieldPath: "spec.forProvider.allocatedStorage"
+        - fromFieldPath: "spec.parameters.region"
+          toFieldPath: "spec.forProvider.region"
+        - fromFieldPath: "spec.parameters.dbName"
+          toFieldPath: "spec.forProvider.dbName"
+        - fromFieldPath: "spec.parameters.publiclyAccessible"
+          toFieldPath: "spec.forProvider.publiclyAccessible"
+        - fromFieldPath: "spec.parameters.dbInstanceClass"
+          toFieldPath: "spec.forProvider.dbInstanceClass"
+        - fromFieldPath: "spec.parameters.dbSubnetGroupName"
+          toFieldPath: "spec.forProvider.dbSubnetGroupName"
+        - fromFieldPath: "spec.parameters.availabilityZone"
+          toFieldPath: "spec.forProvider.availabilityZone"
+      connectionDetails:
+        - fromConnectionSecretKey: username
+        - fromConnectionSecretKey: password
+        - fromConnectionSecretKey: endpoint
+        - fromConnectionSecretKey: port

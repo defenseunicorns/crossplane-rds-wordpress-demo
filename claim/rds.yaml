@@ -1,0 +1,20 @@
+---
+apiVersion: databases.bigbang.dev/v1alpha1
+kind: MySQLChildInstance
+metadata:
+  name: wordpress-mysql-rds
+  namespace: default
+spec:
+  parameters:
+    storageGB: 10
+    region: us-east-1
+    availabilityZone: us-east-1a
+    dbName: wordpressdb
+    dbInstanceClass: db.t3.medium
+    dbSubnetGroupName: crossplane-eks-cluster-with-managed-nodegroup-example-pfrv9z5gx
+    vpcId: vpc-04ee768580092496a
+  compositionSelector:
+    matchLabels:
+      provider: aws
+  writeConnectionSecretToRef:
+    name: mysql-rds

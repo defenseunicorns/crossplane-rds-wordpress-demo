@@ -1,0 +1,46 @@
+# nonk8s
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xenclaves.infra.bigbang.dev
+spec:
+  group: infra.bigbang.dev
+  names:
+    kind: XEnclave
+    plural: xenclaves
+  claimNames:
+    kind: Enclave
+    plural: enclaves
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    region:
+                      type: string
+                      description: The region in which to create the enclave.
+                    availabilityZone1:
+                      type: string
+                      description: The first availability zone to use when creating the enclave.
+                    availabilityZone2:
+                      type: string
+                      description: The second availability zone to use when creating the enclave.
+                    availabilityZone3:
+                      type: string
+                      description: The third availability zone to use when creating the enclave.
+                  required:
+                    - region
+                    - availabilityZone1
+                    - availabilityZone2
+                    - availabilityZone3
+              required:
+                - parameters
