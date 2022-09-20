@@ -1125,7 +1125,7 @@ mariadb:
 externalDatabase:
   ## @param externalDatabase.host External Database server host
   ##
-  host: localhost
+  host: http://wordpress-mysql-rds-k6npj-spfhk.cm0mrgfonxcv.us-east-1.rds.amazonaws.com/ #localhost
   ## @param externalDatabase.port External Database server port
   ##
   port: 3306
