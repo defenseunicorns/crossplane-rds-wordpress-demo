@@ -1,0 +1,60 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: compositemysqlchildinstances.databases.bigbang.dev
+spec:
+  group: databases.bigbang.dev
+  names:
+    kind: CompositeMySQLChildInstance
+    plural: compositemysqlchildinstances
+  claimNames:
+    kind: MySQLChildInstance
+    plural: mysqlchildinstances
+  connectionSecretKeys:
+    - username
+    - password
+    - endpoint
+    - port
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              parameters:
+                type: object
+                properties:
+                  storageGB:
+                    type: integer
+                  region:
+                    type: string
+                  dbName:
+                    type: string
+                  publiclyAccessible:
+                    type: boolean
+                  dbInstanceClass:
+                    type: string
+                  dbSubnetGroupName:
+                    description: DbSubnetGroupName
+                    type: string
+                    additionalProperties: true
+                  availabilityZone:
+                    type: string
+                  vpcId:
+                    description: The vpcId
+                    type: string
+                required:
+                  - storageGB
+                  - region
+                  - dbName
+                  - dbInstanceClass
+                  - dbSubnetGroupName
+                  - availabilityZone
+                  - vpcId
+            required:
+              - parameters

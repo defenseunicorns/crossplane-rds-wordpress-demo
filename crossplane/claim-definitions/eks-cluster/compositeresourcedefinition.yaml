@@ -1,0 +1,44 @@
+# nonk8s
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xeksclusters.infra.bigbang.dev
+spec:
+  group: infra.bigbang.dev
+  names:
+    kind: XEKSCluster
+    plural: xeksclusters
+  claimNames:
+    kind: EKSCluster
+    plural: eksclusters
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    region:
+                      type: string
+                      description: The region in which to create the EKS Cluster.
+                    k8sVersion:
+                      description: Kubernetes version
+                      type: string
+                      enum: ["1.21", "1.22", "1.23"]
+                    subnetMatchLabels:
+                      description: The labels to match to when selecting subnets to deploy the cluster into
+                      type: object
+                      additionalProperties: true
+                  required:
+                    - region
+                    - k8sVersion
+                    - subnetMatchLabels
+              required:
+                - parameters

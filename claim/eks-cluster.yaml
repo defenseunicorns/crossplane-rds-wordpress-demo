@@ -1,0 +1,53 @@
+apiVersion: infra.bigbang.dev/v1alpha1
+kind: Enclave
+metadata:
+  name: crossplane-eks-cluster-with-managed-nodegroup-example
+  namespace: default
+spec:
+  parameters:
+    region: us-east-1
+    availabilityZone1: us-east-1a
+    availabilityZone2: us-east-1b
+    availabilityZone3: us-east-1c
+  compositionSelector:
+    matchLabels:
+      provider: aws
+---
+apiVersion: infra.bigbang.dev/v1alpha1
+kind: EKSCluster
+metadata:
+  name: crossplane-eks-cluster-with-managed-nodegroup-example
+  namespace: default
+spec:
+  parameters:
+    region: us-east-1
+    k8sVersion: "1.22"
+    subnetMatchLabels:
+      crossplane.io/claim-name: crossplane-eks-cluster-with-managed-nodegroup-example
+      crossplane.io/claim-namespace: default
+      visibility: public
+  compositionSelector:
+    matchLabels:
+      provider: aws
+---
+apiVersion: infra.bigbang.dev/v1alpha1
+kind: EKSManagedNodeGroup
+metadata:
+  name: crossplane-eks-cluster-with-managed-nodegroup-example-nodegroup
+  namespace: default
+spec:
+  parameters:
+    region: us-east-1
+    clusterNameMatchLabels:
+      crossplane.io/claim-name: crossplane-eks-cluster-with-managed-nodegroup-example
+      crossplane.io/claim-namespace: default
+    diskSize: 20
+    instanceTypes:
+      - t3.medium
+    desiredNodeCount: 3
+    minNodeCount: 3
+    maxNodeCount: 5
+    subnetMatchLabels:
+      crossplane.io/claim-name: crossplane-eks-cluster-with-managed-nodegroup-example
+      crossplane.io/claim-namespace: default
+      visibility: public
